@@ -50,12 +50,10 @@ func portForwardServices() error {
 		case "dns":
 			err = iptablesPortForward("coredns", "53", "53", false)
 		case "ssh":
-			err = iptablesPortForward("netmaker", "22", "22", false)
+			err = iptablesPortForward("127.0.0.1", "22", "22", true)
 		default:
 			params := strings.Split(service, ":")
-			if len(params) == 3 {
-				err = iptablesPortForward(params[0], params[1], params[2], true)
-			}
+			err = iptablesPortForward(params[0], params[1], params[2], true)
 		}
 		if err != nil {
 			return err

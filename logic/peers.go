@@ -15,7 +15,6 @@ import (
 )
 
 // GetHubPeer - in HubAndSpoke networks, if not the hub, return the hub
-/*
 func GetHubPeer(networkName string) []models.Node {
 	var hubpeer = make([]models.Node, 0)
 	servernodes, err := GetNetworkNodes(networkName)
@@ -29,10 +28,9 @@ func GetHubPeer(networkName string) []models.Node {
 	}
 	return hubpeer
 }
-*/
 
 // GetNodePeers - fetches peers for a given node
-func GetNodePeers(networkName string, excludeRelayed bool, isP2S bool) ([]models.Node, error) {
+func GetNodePeers(networkName string, excludeRelayed bool) ([]models.Node, error) {
 	var peers []models.Node
 	var networkNodes, egressNetworkNodes, err = getNetworkEgressAndNodes(networkName)
 	if err != nil {
@@ -78,9 +76,7 @@ func GetNodePeers(networkName string, excludeRelayed bool, isP2S bool) ([]models
 					}
 				}
 			}
-			if !isP2S || peer.IsHub == "yes" {
-				peers = append(peers, peer)
-			}
+			peers = append(peers, peer)
 		}
 	}
 
@@ -91,22 +87,20 @@ func GetNodePeers(networkName string, excludeRelayed bool, isP2S bool) ([]models
 func GetPeersList(refnode *models.Node) ([]models.Node, error) {
 	var peers []models.Node
 	var err error
-	var isP2S bool
 	var networkName = refnode.Network
 	var excludeRelayed = refnode.IsRelay != "yes"
 	var relayedNodeAddr string
 	if refnode.IsRelayed == "yes" {
 		relayedNodeAddr = refnode.Address
 	}
-
 	network, err := GetNetwork(networkName)
 	if err != nil {
 		return peers, err
 	} else if network.IsPointToSite == "yes" && refnode.IsHub != "yes" {
-		isP2S = true
+		return GetHubPeer(networkName), nil
 	}
 	if relayedNodeAddr == "" {
-		peers, err = GetNodePeers(networkName, excludeRelayed, isP2S)
+		peers, err = GetNodePeers(networkName, excludeRelayed)
 	} else {
 		var relayNode models.Node
 		relayNode, err = GetNodeRelay(networkName, relayedNodeAddr)
@@ -126,7 +120,7 @@ func GetPeersList(refnode *models.Node) ([]models.Node, error) {
 			} else {
 				peerNode.AllowedIPs = append(peerNode.AllowedIPs, peerNode.RelayAddrs...)
 			}
-			nodepeers, err := GetNodePeers(networkName, false, isP2S)
+			nodepeers, err := GetNodePeers(networkName, false)
 			if err == nil && peerNode.UDPHolePunch == "yes" {
 				for _, nodepeer := range nodepeers {
 					if nodepeer.Address == peerNode.Address {
@@ -135,9 +129,8 @@ func GetPeersList(refnode *models.Node) ([]models.Node, error) {
 					}
 				}
 			}
-			if !isP2S || peerNode.IsHub == "yes" {
-				peers = append(peers, peerNode)
-			}
+
+			peers = append(peers, peerNode)
 		}
 	}
 	return peers, err
