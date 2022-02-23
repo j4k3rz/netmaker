@@ -33,6 +33,7 @@ jobs:
                   platforms: linux/amd64
                   push: true
                   tags: ghcr.io/${{ github.repository }}:testing
+                  build-args: version=testing
     netclient:
         runs-on: ubuntu-latest
         steps:
